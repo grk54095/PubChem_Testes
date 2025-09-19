@@ -1,0 +1,23 @@
+# Arquivos de Build
+build/
+.gradle/
+
+# Arquivos gerados pelo IntelliJ
+.idea/
+*.iml
+*.iws
+
+# Arquivos gerados pelo Eclipse
+.classpath
+.project
+.settings/
+
+# Arquivos gerados pelo VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
