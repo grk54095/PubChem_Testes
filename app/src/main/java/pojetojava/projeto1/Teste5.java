@@ -1,6 +1,6 @@
 package pojetojava.projeto1; 
 
-// 2. As importações, incluindo as do Gson que o Gradle vai fornecer.
+// IMPORTAÇÕES DE BIBLIOTECAS
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.io.IOException;
@@ -10,8 +10,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Scanner; 
 
-public class Teste5 { // Classe principal 
-    public static void main(String[] args) { // Método principal
+public class Teste5 { // CLASSE PRINCIPAL
+    public static void main(String[] args) { // MÉTODO PRINCIPAL
         Scanner scanner = new Scanner(System.in); // SCANNER É O INPUT 
 
         System.out.println("Digite uma molécula: "); 
@@ -21,10 +21,13 @@ public class Teste5 { // Classe principal
 
         System.out.println("Você digitou: " + compoundname); 
 
-        String url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/" + compoundname + "/cids/JSON"; 
+        // Variáveis Globais 
+        HttpClient client = HttpClient.newHttpClient(); // CRIA O MENSAGEIRO
+        Gson gson = new Gson(); // Cria um tradutor JSON
+        int cidPrincipal;
 
         try {
-            HttpClient client = HttpClient.newHttpClient(); // CRIA O MENSAGEIRO
+            String url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/" + compoundname + "/cids/JSON";
             HttpRequest request = HttpRequest.newBuilder() // É A CAIXA DA MENSAGEM
                     .uri(URI.create(url)) // COLOCA O DESTINATÁRIO NA CAIXA
                     .build(); // FINALIZA A CAIXA
@@ -32,26 +35,48 @@ public class Teste5 { // Classe principal
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             // envio da mensagem            /dando ok para o client/ é o que vai retornar
 
-            Gson gson = new Gson(); // Cria um tradutor JSON
-            JsonObject jsonObject = gson.fromJson(response.body(), JsonObject.class);
-            // AQUI É ONDE O JSON É LIDO
+            gson.fromJson(response.body(), JsonObject.class);
 
-            // Acessa os dados dentro do JSON para pegar o CID principal
-            int cidPrincipal= jsonObject.getAsJsonObject("IdentifierList").getAsJsonArray("CID").get(0).getAsInt();
+            // ACESSA OS DADOS DO JSON PARA PEGAR O CID PRINCIPAL
+            JsonObject JsonObjectcid = gson.fromJson(response.body(), JsonObject.class);
+            cidPrincipal= JsonObjectcid.getAsJsonObject("IdentifierList").getAsJsonArray("CID").get(0).getAsInt();
             if (response.statusCode() == 200) {
-                System.out.println("Requisição bem-sucedida!");
+                System.out.println("CID principal encontrado: " + cidPrincipal);
             } else {
                 System.out.println("Falha na requisição.");
             }
 
-            System.out.println("\n--- Resposta da API ---");
-            System.out.println("Status Code: " + response.statusCode());
-            System.out.println("Body: " + cidPrincipal); // Recebimento da mensagem
+            // FAZ A BUSCA POR SIMILARES
+            System.out.println("\n--- Buscando Moleculas Similares ---"); 
+            String url_similares = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastsimilarity_2d/cid/" + cidPrincipal + "/cids/JSON";
+            HttpRequest request_similares = HttpRequest.newBuilder()
+                    .uri(URI.create(url_similares))
+                    .build();
+            HttpResponse<String> response_similares = client.send(request_similares, HttpResponse.BodyHandlers.ofString());
+            
+            // PEGA A SEGUNDA RESPOSTA 
+            JsonObject jsonObject_similares = gson.fromJson(response_similares.body(), JsonObject.class); 
+
+            // ACESSA LISTA DE CIDS 
+            com.google.gson.JsonArray cid_similares = jsonObject_similares.getAsJsonObject("IdentifierList").getAsJsonArray("CID");
+
+            //LOOP PARA PRINTAR OS CIDS SIMILARES
+            System.out.println("CIDs similares encontrados: ");  
+            int count = Math.min(5, cid_similares.size()); // LIMITA A 5 SIMILARES 
+            for (int i = 0; i < count; i++) {
+            int cidSimilares = cid_similares.get(i).getAsInt();
+                System.out.println((i + 1) + ". CID: " + cidSimilares);
+            }
+
         } catch (IOException | InterruptedException e) {
             System.out.println("Ocorreu um erro ao fazer a requisição: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("Não foi possível encontrar o CID. A molécula '" + compoundname + "' existe ou foi digitada corretamente?");
         }
+
+       
+
+        }
     }
-}
+
 
