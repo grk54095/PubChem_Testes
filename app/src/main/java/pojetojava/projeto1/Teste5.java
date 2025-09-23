@@ -53,7 +53,7 @@ public class Teste5 { // CLASSE PRINCIPAL
 
                 // Etapa 2 BUSCA POR SIMILARES
                 System.out.println("\n--- Buscando Moleculas Similares ---");
-                String url_similares = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastsimilarity_2d/cid/" + cidPrincipal + "/cids/JSON";
+                String url_similares = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastsimilarity_3d/cid/" + cidPrincipal + "/cids/JSON";
                 HttpRequest request_similares = HttpRequest.newBuilder()
                         .uri(URI.create(url_similares))
                         .build();
@@ -118,7 +118,7 @@ public class Teste5 { // CLASSE PRINCIPAL
                         System.out.println("Você escolheu o CID: " + cidEscolhido);
 
                         // Monta a URL para o download do arquivo SDF
-                        String urlDownload = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/" + cidEscolhido + "/SDF";
+                        String urlDownload = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/" + cidEscolhido + "/SDF?record_type=3d";
                             
                          // Define o nome do arquivo que será salvo
                         Path caminhoDoArquivo = Paths.get("molecula_cid_" + cidEscolhido + ".sdf");
