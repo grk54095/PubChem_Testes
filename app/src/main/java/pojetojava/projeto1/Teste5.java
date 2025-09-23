@@ -9,6 +9,9 @@ import java.net.http.HttpClient; // IMPORTA O MENSAGEIRO DA MENSAGEM
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Scanner; 
+import java.util.ArrayList; 
+import java.util.List; 
+
 
 public class Teste5 { // CLASSE PRINCIPAL
     public static void main(String[] args) { // MÉTODO PRINCIPAL
@@ -27,9 +30,11 @@ public class Teste5 { // CLASSE PRINCIPAL
         int cidPrincipal;
 
         try {
-            String url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/" + compoundname + "/cids/JSON";
+            // Etapa 1 BUSCA O CID PRINCIPAL
+            System.out.println("\n--- Buscando CID Principal ---"); 
+            String urlCID = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/" + compoundname + "/cids/JSON";
             HttpRequest request = HttpRequest.newBuilder() // É A CAIXA DA MENSAGEM
-                    .uri(URI.create(url)) // COLOCA O DESTINATÁRIO NA CAIXA
+                    .uri(URI.create(urlCID)) // COLOCA O DESTINATÁRIO NA CAIXA
                     .build(); // FINALIZA A CAIXA
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -46,8 +51,9 @@ public class Teste5 { // CLASSE PRINCIPAL
                 System.out.println("Falha na requisição.");
             }
 
-            // FAZ A BUSCA POR SIMILARES
-            System.out.println("\n--- Buscando Moleculas Similares ---"); 
+
+            // Etapa 2 BUSCA POR SIMILARES
+            System.out.println("\n--- Buscando Moleculas Similares ---");
             String url_similares = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastsimilarity_2d/cid/" + cidPrincipal + "/cids/JSON";
             HttpRequest request_similares = HttpRequest.newBuilder()
                     .uri(URI.create(url_similares))
@@ -60,12 +66,39 @@ public class Teste5 { // CLASSE PRINCIPAL
             // ACESSA LISTA DE CIDS 
             com.google.gson.JsonArray cid_similares = jsonObject_similares.getAsJsonObject("IdentifierList").getAsJsonArray("CID");
 
-            //LOOP PARA PRINTAR OS CIDS SIMILARES
-            System.out.println("CIDs similares encontrados: ");  
-            int count = Math.min(5, cid_similares.size()); // LIMITA A 5 SIMILARES 
-            for (int i = 0; i < count; i++) {
-            int cidSimilares = cid_similares.get(i).getAsInt();
-                System.out.println((i + 1) + ". CID: " + cidSimilares);
+            // CRIA LISTA PARA GUARDAR OS CIDS SIMILARES 
+            List<Integer> lista_cids_similares = new ArrayList<>(); 
+            int counter = Math.min(5, cid_similares.size()); // LIMITA A 5 SIMILARES
+            for (int i = 0; i < counter; i++) {
+               lista_cids_similares.add(cid_similares.get(i).getAsInt());
+                
+            }
+
+            // ETAPA 3 LOOP PARA PROPRIEDADES             
+            System.out.println("\n--- Propriedades dos CIDs Similares ---"); 
+            int index = 1; 
+            for (Integer cid: lista_cids_similares) { 
+                String urlPropriedades = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/" + cid + "/property/MolecularFormula/JSON";
+
+                //REQUISIÇÃO PARA PROPRIEDADES 
+                HttpRequest request_propriedades = HttpRequest.newBuilder()
+                        .uri(URI.create(urlPropriedades))
+                        .build(); 
+                HttpResponse<String> response_propriedades = client.send(request_propriedades, HttpResponse.BodyHandlers.ofString());
+                if (response_propriedades.statusCode() == 200) {
+                    JsonObject jsonObject_propriedades = gson.fromJson(response_propriedades.body(), JsonObject.class);
+                    
+                    JsonObject dados= jsonObject_propriedades.getAsJsonObject("PropertyTable").getAsJsonArray("Properties").get(0).getAsJsonObject();
+                    String formula = dados.has("MolecularFormula") ? dados.get("MolecularFormula").getAsString() : "N/A";
+                    System.out.println(index + ". CID: " + cid + " | Fórmula Molecular: " + formula);
+                } else {
+                    System.out.println("Falha na requisição para CID: " + cid);
+                } 
+
+                index++; 
+
+                //Pausa de 1 segundo entre as requisições 
+                Thread.sleep(1000);
             }
 
         } catch (IOException | InterruptedException e) {
