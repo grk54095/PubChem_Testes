@@ -27,6 +27,9 @@ dependencies {
     // Adicione esta linha para o Gson:
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // Adicione esta linha para o Jmol: 
+    implementation(files("libs/Jmol.jar", "libs/JmolData.jar"))
+
     // A linha abaixo é para testes, pode deixar aí.
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.3")
 }
@@ -40,9 +43,7 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "pojetojava.App" 
-
-    mainClass.set("pojetojava.projeto1.Teste5")
+    mainClass.set("pojetojava.projeto1.PubChemApp")
 }
 
 tasks.named<Test>("test") {
