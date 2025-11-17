@@ -26,12 +26,11 @@ dependencies {
 
     // Adicione esta linha para o Gson:
     implementation("com.google.code.gson:gson:2.10.1")
+    // Adicione esta linha para o Jmol:
 
-    // Adicione esta linha para o Jmol: 
-    implementation(files("libs/Jmol.jar", "libs/JmolData.jar"))
+    implementation(rootProject.files("libs/Jmol.jar", "libs/JmolData.jar"))
 
-    // A linha abaixo é para testes, pode deixar aí.
-    testImplementation("org.junit.jupiter:junit-jupiter:5.9.3")
+
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
