@@ -278,6 +278,7 @@ public class TesteJmol {
         }
 
         @Override
+        @SuppressWarnings("deprecation") 
         public void paint(Graphics g) {
             // A "mágica" está aqui:
             viewer.setScreenDimension(getWidth(), getHeight());
