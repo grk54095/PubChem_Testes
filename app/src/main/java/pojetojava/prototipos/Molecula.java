@@ -5,26 +5,24 @@
  * pass molecular data between methods in the PubChemApp class.
  */
 
-
-
 package pojetojava.prototipos;
 
-public class Molecula { 
+public class Molecula {
     // Atributos da classe
     int cid;
     String formula;
+    String nome;
 
     // Construtor atualizado para receber apenas o CID e a Fórmula
-    public Molecula(int cid, String formula) {
+    public Molecula(int cid, String formula, String nome) {
         this.cid = cid;
         this.formula = formula;
+        this.nome = nome;
     }
 
     // Método toString atualizado para exibir apenas o CID e a Fórmula
     @Override
     public String toString() {
-        return "CID " + cid + " - Fórmula: " + formula;
+        return "CID " + cid + " - Fórmula: " + formula + " - Nome: " + nome;
     }
 }
-    
-

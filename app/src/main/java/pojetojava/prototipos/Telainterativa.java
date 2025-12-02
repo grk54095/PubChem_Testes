@@ -27,7 +27,7 @@ import java.util.Vector;
 import org.jmol.adapter.smarter.SmarterJmolAdapter;
 import org.jmol.api.JmolViewer;
 
-public class TesteJmol {
+public class Telainterativa {
 
     // --- Componentes da Interface ---
     private JFrame frame;
@@ -49,12 +49,12 @@ public class TesteJmol {
     private final Gson gson = new Gson();
     private List<Molecula> currentResults = new ArrayList<>();
 
-    public TesteJmol() {
+    public Telainterativa() {
         createUI();
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new TesteJmol());
+        SwingUtilities.invokeLater(() -> new Telainterativa());
     }
 
     private void createUI() {
@@ -104,7 +104,7 @@ public class TesteJmol {
 
         resultsArea = new JTextArea();
         resultsArea.setEditable(false);
-        resultsArea.setFont(new Font("Arial", Font.BOLD, 16));
+        resultsArea.setFont(new Font("Monospaced", Font.BOLD, 14));
         JScrollPane scrollPane = new JScrollPane(resultsArea);
 
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
@@ -193,6 +193,7 @@ public class TesteJmol {
     // --- CLASSES INTERNAS (WORKERS) ---
 
     private class SuggestionWorker extends SwingWorker<List<String>, Void> {
+
         private final String partialName;
 
         public SuggestionWorker(String partialName) {
@@ -201,7 +202,7 @@ public class TesteJmol {
 
         @Override
         protected List<String> doInBackground() throws Exception {
-            return TesteJmol.this.searchSuggestions(partialName);
+            return Telainterativa.this.searchSuggestions(partialName);
         }
 
         @Override
@@ -240,11 +241,11 @@ public class TesteJmol {
 
         @Override
         protected List<Molecula> doInBackground() throws Exception {
-            int principalCid = TesteJmol.this.findPrincipalCid(selectedName);
-            List<Integer> similarCids = TesteJmol.this.findSimilarCids(principalCid);
+            int principalCid = Telainterativa.this.findPrincipalCid(selectedName);
+            List<Integer> similarCids = Telainterativa.this.findSimilarCids(principalCid);
             if (similarCids.isEmpty())
                 throw new Exception("No similar molecules found for '" + selectedName + "'.");
-            return TesteJmol.this.fetchProperties(similarCids);
+            return Telainterativa.this.fetchProperties(similarCids);
         }
 
         @Override
@@ -396,11 +397,11 @@ public class TesteJmol {
         currentResults.clear();
         currentResults.addAll(moleculas);
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%-5s %-15s %-50s\n", "#", "CID", "Formula"));
+        sb.append(String.format("%-5s %-10s %-20s %s\n", "#", "CID", "Formula", "Name"));
         sb.append("-".repeat(70) + "\n");
         int index = 1;
         for (Molecula mol : moleculas) {
-            sb.append(String.format("%-5s %-15s %-50s\n", index + ".", mol.cid, mol.formula));
+            sb.append(String.format("%-5s %-10s %-20s %s\n", index + ".", mol.cid, mol.formula, mol.nome));
             index++;
         }
         resultsArea.setText(sb.toString());
