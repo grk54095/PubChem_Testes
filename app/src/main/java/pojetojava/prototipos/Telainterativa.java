@@ -8,8 +8,9 @@ package pojetojava.prototipos;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-//import java.awt.event.ActionEvent;
-//import java.awt.event.ActionListener;
+import javax.swing.table.DefaultTableModel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.ArrayList;
 import com.google.gson.Gson;
@@ -33,10 +34,10 @@ public class Telainterativa {
     private JFrame frame;
     private JComboBox<String> searchComboBox;
     private JButton searchButton;
+    private JTable resultsTable;
+    private DefaultTableModel tableModel;
     private JTextArea resultsArea;
-    private JTextField downloadField;
     private JButton downloadButton;
-    private JLabel downloadLabel;
     private JButton view3DButton;
 
     // --- Lógica do Autocomplete ---
@@ -60,7 +61,7 @@ public class Telainterativa {
     private void createUI() {
         frame = new JFrame("PubChem Search and Download");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
+        frame.setSize(900, 600);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
 
@@ -105,20 +106,45 @@ public class Telainterativa {
         resultsArea = new JTextArea();
         resultsArea.setEditable(false);
         resultsArea.setFont(new Font("Monospaced", Font.BOLD, 14));
-        JScrollPane scrollPane = new JScrollPane(resultsArea);
+
+        // --- Table Setup ---
+        String[] columnNames = { "#", "CID", "Formula", "Name" };
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        resultsTable = new JTable(tableModel);
+        resultsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        resultsTable.setRowHeight(25);
+        resultsTable.setFont(new Font("SansSerif", Font.PLAIN, 14));
+
+        resultsTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int selectedRow = resultsTable.getSelectedRow();
+                boolean hasSelection = selectedRow != -1;
+                downloadButton.setEnabled(hasSelection);
+                view3DButton.setEnabled(hasSelection);
+
+                if (e.getClickCount() == 2 && hasSelection) {
+                    startJmolViewer();
+                }
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(resultsTable);
 
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        downloadLabel = new JLabel("Enter item # for action:");
-        bottomPanel.add(downloadLabel);
-        downloadField = new JTextField(5);
-        bottomPanel.add(downloadField);
+
+        view3DButton = new JButton("View 3D");
+        bottomPanel.add(view3DButton);
+        view3DButton.setEnabled(false);
+
         downloadButton = new JButton("Download SDF");
         bottomPanel.add(downloadButton);
         downloadButton.setEnabled(false);
-
-        view3DButton = new JButton("Visualizar 3D");
-        bottomPanel.add(view3DButton);
-        view3DButton.setEnabled(false);
 
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
@@ -128,7 +154,6 @@ public class Telainterativa {
 
         searchButton.addActionListener(e -> startFullSearchWorker());
         downloadButton.addActionListener(e -> startDownloadWorker());
-        // Adiciona a ação para o novo botão de visualização
         view3DButton.addActionListener(e -> startJmolViewer());
 
         frame.setLocationRelativeTo(null);
@@ -165,29 +190,25 @@ public class Telainterativa {
     }
 
     private void startDownloadWorker() {
-        try {
-            int choiceInt = Integer.parseInt(downloadField.getText());
-            if (choiceInt < 1 || choiceInt > currentResults.size())
-                throw new NumberFormatException();
-            int cidToDownload = currentResults.get(choiceInt - 1).cid;
-            new DownloadWorker(cidToDownload).execute();
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(frame, "Invalid input. Please enter a valid number from the list.",
-                    "Input Error", JOptionPane.ERROR_MESSAGE);
+        int selectedRow = resultsTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a molecule from the table.",
+                    "Selection Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+        int cidToDownload = currentResults.get(selectedRow).cid;
+        new DownloadWorker(cidToDownload).execute();
     }
 
     private void startJmolViewer() {
-        try {
-            int choiceInt = Integer.parseInt(downloadField.getText());
-            if (choiceInt < 1 || choiceInt > currentResults.size())
-                throw new NumberFormatException();
-            int cidToView = currentResults.get(choiceInt - 1).cid;
-            new VisualizationDialog(frame, cidToView).setVisible(true);
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(frame, "Invalid input. Please enter a valid number from the list.",
-                    "Input Error", JOptionPane.ERROR_MESSAGE);
+        int selectedRow = resultsTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a molecule from the table.",
+                    "Selection Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+        int cidToView = currentResults.get(selectedRow).cid;
+        new VisualizationDialog(frame, cidToView).setVisible(true);
     }
 
     // --- CLASSES INTERNAS (WORKERS) ---
@@ -323,7 +344,7 @@ public class Telainterativa {
         private JMolPanel jmolPanel; // <-- MUDANÇA: Usa a nossa classe JMolPanel
 
         public VisualizationDialog(JFrame owner, int cidToVisualize) {
-            super(owner, "3D Visualization - CID: " + cidToVisualize, true);
+            super(owner, "3D Visualization - CID: " + cidToVisualize, false);
             this.cid = cidToVisualize;
             setSize(600, 600);
             setLayout(new BorderLayout());
@@ -396,17 +417,17 @@ public class Telainterativa {
     private void displayResults(List<Molecula> moleculas) {
         currentResults.clear();
         currentResults.addAll(moleculas);
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%-5s %-10s %-20s %s\n", "#", "CID", "Formula", "Name"));
-        sb.append("-".repeat(70) + "\n");
+
+        tableModel.setRowCount(0); // Clear existing rows
         int index = 1;
         for (Molecula mol : moleculas) {
-            sb.append(String.format("%-5s %-10s %-20s %s\n", index + ".", mol.cid, mol.formula, mol.nome));
-            index++;
+            Object[] rowData = { index++, mol.cid, mol.formula, mol.nome };
+            tableModel.addRow(rowData);
         }
-        resultsArea.setText(sb.toString());
-        downloadButton.setEnabled(true);
-        view3DButton.setEnabled(true);
+
+        // Disable buttons until selection
+        downloadButton.setEnabled(false);
+        view3DButton.setEnabled(false);
     }
 
     public List<String> searchSuggestions(String textPartial) throws Exception {
