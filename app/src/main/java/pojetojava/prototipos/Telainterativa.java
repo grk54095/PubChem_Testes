@@ -399,7 +399,21 @@ public class Telainterativa {
                     viewer.evalString("spacefill 23%");
                     viewer.evalString("zoom 150");
                     viewer.evalString("rotate best");
-                    viewer.evalString("spin on");
+
+                    // Criação Script Otimização
+                    StringBuilder script = new StringBuilder();
+                    // 1. Prepara o texto na tela (Echo)
+                    script.append("set echo top left; ");
+                    script.append("font echo 14 sanserif; ");
+                    script.append("color echo yellow; ");
+                    script.append("echo 'Calculando energia...'; refresh; ");
+                    // 2. Otimiza a estrutura (Minimize)
+                    script.append("minimize; ");
+                    // 3. Mostra o resultado da energia na tela
+                    script.append("echo 'Energia: @{_minimizationEnergy} kJ/mol'; ");
+                    // 4. Executa o script
+                    viewer.evalString(script.toString());
+
                     return null;
                 }
 
